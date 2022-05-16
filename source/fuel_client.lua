@@ -116,6 +116,7 @@ AddEventHandler('fuel:startFuelUpTick', function(pumpObject, ped, vehicle)
 
 				SetPedAmmo(ped, 883325847, math.floor(GetAmmoInPedWeapon(ped, 883325847) - fuelToAdd * 100))
 			else
+				TriggerEvent("hop_ui:cancelLoader")
 				isFueling = false
 			end
 		else
@@ -124,6 +125,7 @@ AddEventHandler('fuel:startFuelUpTick', function(pumpObject, ped, vehicle)
 
 		if currentFuel > 100.0 then
 			currentFuel = 100.0
+			TriggerEvent("hop_ui:cancelLoader")
 			isFueling = false
 		end
 
@@ -132,6 +134,7 @@ AddEventHandler('fuel:startFuelUpTick', function(pumpObject, ped, vehicle)
 		if currentCash >= currentCost then
 			SetFuel(vehicle, currentFuel)
 		else
+			TriggerEvent("hop_ui:cancelLoader")
 			isFueling = false
 		end
 	end
@@ -157,6 +160,7 @@ AddEventHandler('fuel:refuelFromPump', function(pumpObject, ped, vehicle)
 			DisableControlAction(0, controlIndex)
 		end
 
+		TriggerEvent("hop_ui:newPercentLoader","Refueling...", currentFuel)
 		local vehicleCoords = GetEntityCoords(vehicle)
 
 		if pumpObject then
@@ -179,6 +183,7 @@ AddEventHandler('fuel:refuelFromPump', function(pumpObject, ped, vehicle)
 
 		if IsControlJustReleased(0, 38) or DoesEntityExist(GetPedInVehicleSeat(vehicle, -1)) or (isNearPump and GetEntityHealth(pumpObject) <= 0) then
 			isFueling = false
+			TriggerEvent("hop_ui:cancelLoader")
 		end
 
 		Citizen.Wait(0)
