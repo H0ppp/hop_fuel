@@ -193,106 +193,7 @@ AddEventHandler('fuel:refuelFromPump', function(pumpObject, ped, vehicle)
 	RemoveAnimDict("timetable@gardener@filling_can")
 end)
 
-Citizen.CreateThread(function()
-	while true do
-		local ped = PlayerPedId()
 
-		if not isFueling and ((isNearPump and GetEntityHealth(isNearPump) > 0) or (GetSelectedPedWeapon(ped) == 883325847 and not isNearPump)) then
-			if IsPedInAnyVehicle(ped) and GetPedInVehicleSeat(GetVehiclePedIsIn(ped), -1) == ped then
-				local pumpCoords = GetEntityCoords(isNearPump)
-
-				DrawText3Ds(pumpCoords.x, pumpCoords.y, pumpCoords.z + 1.2, Config.Strings.ExitVehicle)
-			else
-				local vehicle = GetPlayersLastVehicle()
-				local vehicleCoords = GetEntityCoords(vehicle)
-
-				if DoesEntityExist(vehicle) and GetDistanceBetweenCoords(GetEntityCoords(ped), vehicleCoords) < 2.5 then
-					if not DoesEntityExist(GetPedInVehicleSeat(vehicle, -1)) then
-						local stringCoords = GetEntityCoords(isNearPump)
-						local canFuel = true
-
-						if GetSelectedPedWeapon(ped) == 883325847 then
-							stringCoords = vehicleCoords
-
-							if GetAmmoInPedWeapon(ped, 883325847) < 100 then
-								canFuel = false
-							end
-						end
-
-						if GetVehicleFuelLevel(vehicle) < 95 and canFuel then
-							if currentCash > 0 then
-								DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.EToRefuel)
-
-								if IsControlJustReleased(0, 38) then
-									isFueling = true
-
-									TriggerEvent('fuel:refuelFromPump', isNearPump, ped, vehicle)
-									LoadAnimDict("timetable@gardener@filling_can")
-								end
-							else
-								DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.NotEnoughCash)
-							end
-						elseif not canFuel then
-							DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.JerryCanEmpty)
-						else
-							DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.FullTank)
-						end
-					end
-				elseif isNearPump then
-					local stringCoords = GetEntityCoords(isNearPump)
-
-					if currentCash >= Config.JerryCanCost then
-						if not HasPedGotWeapon(ped, 883325847) then
-							DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.PurchaseJerryCan)
-
-							if IsControlJustReleased(0, 38) then
-								GiveWeaponToPed(ped, 883325847, 4500, false, true)
-
-								TriggerServerEvent('fuel:pay', Config.JerryCanCost)
-
-								currentCash = ESX.GetPlayerData().money
-							end
-						else
-							if Config.UseESX then
-								local refillCost = Round(Config.RefillCost * (1 - GetAmmoInPedWeapon(ped, 883325847) / 4500))
-
-								if refillCost > 0 then
-									if currentCash >= refillCost then
-										DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.RefillJerryCan .. refillCost)
-
-										if IsControlJustReleased(0, 38) then
-											TriggerServerEvent('fuel:pay', refillCost)
-
-											SetPedAmmo(ped, 883325847, 4500)
-										end
-									else
-										DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.NotEnoughCashJerryCan)
-									end
-								else
-									DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.JerryCanFull)
-								end
-							else
-								DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.RefillJerryCan)
-
-								if IsControlJustReleased(0, 38) then
-									SetPedAmmo(ped, 883325847, 4500)
-								end
-							end
-						end
-					else
-						DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.NotEnoughCash)
-					end
-				else
-					Citizen.Wait(250)
-				end
-			end
-		else
-			Citizen.Wait(250)
-		end
-
-		Citizen.Wait(0)
-	end
-end)
 
 if Config.ShowNearestGasStationOnly then
 	Citizen.CreateThread(function()
@@ -391,3 +292,62 @@ if Config.EnableHUD then
 		end
 	end)
 end
+
+
+RegisterNetEvent("hop_fuel:forceFuel")
+AddEventHandler("hop_fuel:forceFuel", function()
+	local ped = PlayerPedId()
+
+			local vehicle = GetPlayersLastVehicle()
+			local vehicleCoords = GetEntityCoords(vehicle)
+
+			if DoesEntityExist(vehicle) and GetDistanceBetweenCoords(GetEntityCoords(ped), vehicleCoords) < 2.5 then
+				if not DoesEntityExist(GetPedInVehicleSeat(vehicle, -1)) then
+					local stringCoords = GetEntityCoords(isNearPump)
+					local canFuel = true
+					if GetVehicleFuelLevel(vehicle) < 95 and canFuel then
+						if currentCash > 0 then
+							DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.EToRefuel)
+								isFueling = true
+
+								TriggerEvent('fuel:refuelFromPump', isNearPump, ped, vehicle)
+								LoadAnimDict("timetable@gardener@filling_can")
+						else
+							TriggerEvent("hop_ui:addNotification","",Config.Strings.NotEnoughCash,7000, "error")
+						end
+					else
+						TriggerEvent("hop_ui:addNotification","",Config.Strings.FullTank,7000, "error")
+					end
+				end
+			else 
+				TriggerEvent("hop_ui:addNotification","","There is no vehicle in range.",7000, "error")
+			end
+end)
+
+RegisterNetEvent("hop_fuel:jerryCan")
+AddEventHandler("hop_fuel:jerryCan", function()
+	TriggerEvent("hop_ui:addNotification","","nope",7000, "error")
+end)
+
+for k,v in pairs(Config.PumpModels) do
+    exports.qtarget:AddTargetModel({k}, {
+        options = {
+            {
+                event = "hop_fuel:forceFuel",
+				icon = "fas fa-gas-pump",
+                label = "Fuel Vehicle",
+                colour = "blue",
+                num = 1,
+            },
+			{
+                event = "hop_fuel:jerryCan",
+				icon = "fas fa-car",
+                label = "Buy Jerry Can ($500)",
+                colour = "blue",
+                num = 2,
+            },
+        },
+        distance = 3
+    })
+end
+
