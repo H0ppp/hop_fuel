@@ -307,7 +307,6 @@ AddEventHandler("hop_fuel:forceFuel", function()
 					local canFuel = true
 					if GetVehicleFuelLevel(vehicle) < 95 and canFuel then
 						if currentCash > 0 then
-							DrawText3Ds(stringCoords.x, stringCoords.y, stringCoords.z + 1.2, Config.Strings.EToRefuel)
 								isFueling = true
 
 								TriggerEvent('fuel:refuelFromPump', isNearPump, ped, vehicle)
